@@ -8,7 +8,6 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify, abort, make_response
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import exc, and_
 import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
@@ -17,8 +16,7 @@ from flask_migrate import Migrate
 from datetime import datetime
 import itertools
 from flask_wtf.csrf import CSRFProtect
-import logging
-
+from sqlalchemy import exc, and_
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -31,15 +29,12 @@ migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 logger = logging.getLogger(__name__)
 
-# DONE: connect to a local postgresql database
-
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
 
 
 class Venue(db.Model):
-    """Represents venue data model."""
     __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -56,17 +51,6 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String)
 
     def __init__(self, name, genres, city, state, address, phone, facebook_link):
-        """Instantiates a new venue with initial values.
-
-        Args:
-            name(str): The name of the venue.
-            genres(str): The genres in a comma-separated string.
-            city(str): The city name.
-            state(str): The state name.
-            address(str): The full address.
-            phone(str): The full phone number.
-            facebook_link(str): The facebook link (URL).
-        """
         self.name = name
         self.genres = genres
         self.city = city
@@ -76,24 +60,18 @@ class Venue(db.Model):
         self.facebook_link = facebook_link
 
     def insert(self):
-        """Adds this instance to the session and then persist it to the database."""
         db.session.add(self)
         db.session.commit()
 
     def update(self):
-        """Persists any changes made to the database."""
         db.session.commit()
 
     def delete(self):
-        """Deletes this instance then persist it to the database."""
         db.session.delete(self)
         db.session.commit()
 
     @property
     def past_shows(self):
-        """:obj:`list` of :obj:`dict`: Gets past shows dictionary containing `artist_id`,
-            `artist_name`, `artist_image_link` and `start_time`.
-        """
         past_shows = list(
             filter(lambda show: show.start_time < datetime.now(), self.shows))
         return [
@@ -106,9 +84,6 @@ class Venue(db.Model):
 
     @property
     def upcoming_shows(self):
-        """:obj:`list` of :obj:`dict`: Gets upcoming shows dictionary containing `artist_id`,
-            `artist_name`, `artist_image_link` and `start_time`.
-        """
         upcoming_shows = list(
             filter(lambda show: show.start_time > datetime.now(), self.shows))
         return [
@@ -121,16 +96,13 @@ class Venue(db.Model):
 
     @property
     def past_shows_count(self):
-        """int: Gets past shows count."""
         return len(self.past_shows)
 
     @property
     def upcoming_shows_count(self):
-        """int: Gets upcoming shows count."""
         return len(self.past_shows)
 
     def format(self):
-        """dict: Gets this instance as a dictionary containing all attributes."""
         return {
             'id': self.id,
             'name': self.name,
@@ -156,8 +128,6 @@ class Venue(db.Model):
     def __getitem__(self, key):
         return getattr(self, key)
 
-    # DONE: implement any missing fields, as a database migration using Flask-Migrate
-
 
 class Artist(db.Model):
     """Represents artist data model."""
@@ -176,16 +146,6 @@ class Artist(db.Model):
     seeking_description = db.Column(db.String)
 
     def __init__(self, name, genres, city, state, phone, facebook_link):
-        """Instantiates a new artist with initial values.
-
-        Args:
-            name(str): The name of the venue.
-            genres(str): The genres in a comma-separated string.
-            city(str): The city name.
-            state(str): The state name.
-            phone(str): The full phone number.
-            facebook_link(str): The facebook link (URL).
-        """
         self.name = name
         self.genres = genres
         self.city = city
@@ -194,19 +154,14 @@ class Artist(db.Model):
         self.facebook_link = facebook_link
 
     def insert(self):
-        """Adds this instance to the session and then persist it to the database."""
         db.session.add(self)
         db.session.commit()
 
     def update(self):
-        """Persists any changes made to the database."""
         db.session.commit()
 
     @property
     def past_shows(self):
-        """:obj:`list` of :obj:`dict`: Gets past shows dictionary containing `venue_id`,
-            `venue_name`, `venue_image_link` and `start_time`.
-        """
         past_shows = list(
             filter(lambda show: show.start_time < datetime.now(), self.shows))
         return [
@@ -219,9 +174,6 @@ class Artist(db.Model):
 
     @property
     def upcoming_shows(self):
-        """:obj:`list` of :obj:`dict`: Gets upcoming shows dictionary containing `venue_id`,
-            `venue_name`, `venue_image_link` and `start_time`.
-        """
         upcoming_shows = list(
             filter(lambda show: show.start_time > datetime.now(), self.shows))
         return [
@@ -234,16 +186,13 @@ class Artist(db.Model):
 
     @property
     def past_shows_count(self):
-        """int: Gets past shows count."""
         return len(self.past_shows)
 
     @property
     def upcoming_shows_count(self):
-        """int: Gets upcoming shows count."""
         return len(self.past_shows)
 
     def format(self):
-        """dict: Gets this instance as a dictionary containing all attributes."""
         return {
             'id': self.id,
             'name': self.name,
@@ -265,13 +214,7 @@ class Artist(db.Model):
     def __repr__(self):
         return f'<Artist name={self.name}, city={self.city}, state={self.state}, genres={self.genres}, past_shows_count={self.past_shows_count}, upcoming_shows_count={self.upcoming_shows_count}>'
 
-    # DONE: implement any missing fields, as a database migration using Flask-Migrate
-
-# DONE Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
-
-
 class Show(db.Model):
-    """Represents show data model."""
     __tablename__ = 'show'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -282,28 +225,18 @@ class Show(db.Model):
     start_time = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
     def __init__(self, venue_id, artist_id, start_time):
-        """Instantiates a new show with initial values.
-
-        Args:
-            venue_id(int): The venue ID.
-            artist_id(int): The artist ID.
-            start_time(datetime): The start date and time.
-        """
         self.venue_id = venue_id
         self.artist_id = artist_id
         self.start_time = start_time
 
     def insert(self):
-        """Adds this instance to the session and then persist it to the database."""
         db.session.add(self)
         db.session.commit()
 
     def update(self):
-        """Persists any changes made to the database."""
         db.session.commit()
 
     def format(self):
-        """dict: Gets this instance as a dictionary containing all attributes."""
         return {
             'venue_id': self.venue.id,
             'venue_name': self.venue.name,
@@ -320,18 +253,7 @@ class Show(db.Model):
 # Filters.
 #----------------------------------------------------------------------------#
 
-
 def format_datetime(value, format='medium'):
-    """Formats date and time using the giver format.
-
-    Args:
-        value(str): The date and time as a string.
-        format(str): `medium` or `full`
-    
-    Returns
-        The date and time formatted according to the given pattern.
-
-    """
     date = dateutil.parser.parse(value)
     if format == 'full':
         format = 'EEEE, d MMMM y ''at'' h:mma'
@@ -349,7 +271,6 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 @app.route('/', methods=['GET', 'DELETE'])
 def index():
-    """Renders home page."""
     return render_template('pages/home.html')
 
 #  Venues
@@ -358,9 +279,6 @@ def index():
 
 @app.route('/venues')
 def venues():
-    """Renders venues page."""
-    # DONE: replace with real venues data.
-    #       num_shows should be aggregated based on number of upcoming shows per venue.
     venues = Venue.query.all()
 
     keyfunc = lambda v: (v['city'], v['state'])
@@ -380,11 +298,6 @@ def venues():
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
-    """Renders venues search results page."""
-    # DONE: implement search on venues with partial string search. Ensure it is case-insensitive.
-    # seach for Hop should return "The Musical Hop".
-    # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-
     search_term = request.form.get('search_term', '')
 
     venues_found = Venue.query.filter(
@@ -404,10 +317,6 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-    """Renders a specific venue page."""
-    # shows the venue page with the given venue_id
-    # DONE: replace with real venue data from the venues table, using venue_id
-
     venue = Venue.query.filter_by(id=venue_id).first()
 
     if venue is None:
@@ -423,16 +332,12 @@ def show_venue(venue_id):
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-    """Renders new venue page."""
     form = VenueForm()
     return render_template('forms/new_venue.html', form=form)
 
 
 @app.route('/venues/create', methods=['POST'])
 def create_venue_submission():
-    """Handles new venue POST request and in case of success redirects to the new venue page."""
-    # DONE: insert form data as a new Venue record in the db, instead
-    # DONE: modify data to be the data object returned from db insertion
     form = VenueForm(request.form)
 
     if not form.validate_on_submit():
@@ -460,8 +365,7 @@ def create_venue_submission():
                 # on successful db insert, flash success
                 flash(
                     f'Venue {venue_name} was successfully created!', 'success')
-                # DONE: on unsuccessful db insert, flash an error instead.
-
+               
                 return redirect(url_for('show_venue', venue_id=new_venue.id))
 
         except exc.SQLAlchemyError as error:
@@ -478,8 +382,6 @@ def create_venue_submission():
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
-    """Handles DELETE request and in case of success redirects to home page."""
-    # DONE: Complete this endpoint for taking a venue_id, and using
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit could fail.
     venue = Venue.query.filter_by(id=venue_id).first()
 
@@ -504,9 +406,6 @@ def delete_venue(venue_id):
 
 @app.route('/artists')
 def artists():
-    """Renders artists page."""
-    # DONE: replace with real data returned from querying the database
-
     artists = Artist.query.order_by(Artist.name.asc()).all()
     data = [{'id': artist.id, 'name': artist.name} for artist in artists]
 
@@ -515,8 +414,6 @@ def artists():
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
-    """Renders artists search results page."""
-    # DONE: implement search on artists with partial string search. Ensure it is case-insensitive.
     # seach for "A" should return "Guns N Petals", "Matt Quevado", and "The Wild Sax Band".
     # search for "band" should return "The Wild Sax Band".
     search_term = request.form.get('search_term', '')
@@ -537,9 +434,7 @@ def search_artists():
 
 @app.route('/artists/<int:artist_id>')
 def show_artist(artist_id):
-    """Renders a specific artist page."""
     # shows the venue page with the given venue_id
-    # DONE: replace with real venue data from the venues table, using venue_id
 
     artist = Artist.query.filter_by(id=artist_id).first()
 
@@ -577,14 +472,12 @@ def edit_artist(artist_id):
 
     form = ArtistForm(formdata=None, data=artist)
 
-    # DONE: populate form with fields from artist with ID <artist_id>
     return render_template('forms/edit_artist.html', form=form, artist=artist)
 
 
 @app.route('/artists/<int:artist_id>/edit', methods=['POST'])
 def edit_artist_submission(artist_id):
-    """Handles edit artist POST request and in case of success redirects to the artist page."""
-    # DONE: take values from the form submitted, and update existing
+
     # artist record with ID <artist_id> using the new attributes
     artist_edited = Artist.query.filter_by(id=artist_id).first()
 
@@ -605,7 +498,6 @@ def edit_artist_submission(artist_id):
 
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
-    """Renders edit venue page."""
     venue_found = Venue.query.filter_by(id=venue_id).first()
 
     if venue_found is None:
@@ -628,14 +520,12 @@ def edit_venue(venue_id):
 
     form = VenueForm(formdata=None, data=venue)
 
-    # DONE: populate form with values from venue with ID <venue_id>
+
     return render_template('forms/edit_venue.html', form=form, venue=venue)
 
 
 @app.route('/venues/<int:venue_id>/edit', methods=['POST'])
 def edit_venue_submission(venue_id):
-    """Handles edit venue POST request and in case of success redirects to the venue page."""
-    # DONE: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
     venue_edited = Venue.query.filter_by(id=venue_id).first()
 
@@ -658,17 +548,13 @@ def edit_venue_submission(venue_id):
 
 @app.route('/artists/create', methods=['GET'])
 def create_artist_form():
-    """Renders new artist page."""
     form = ArtistForm()
     return render_template('forms/new_artist.html', form=form)
 
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
-    """Handles new artist POST request and in case of success redirects to the new artist page."""
     # called upon submitting the new artist listing form
-    # DONE: insert form data as a new Venue record in the db, instead
-    # DONE: modify data to be the data object returned from db insertion
     form = ArtistForm(request.form)
 
     if not form.validate_on_submit():
@@ -702,7 +588,6 @@ def create_artist_submission():
             logger.exception(error, exc_info=True)
             error_message = f'An error occurred. Artist {artist_name} could not be created.'
 
-    # DONE: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
     if error_message is not None:
         flash(error_message, 'danger')
@@ -715,7 +600,6 @@ def create_artist_submission():
 
 @app.route('/shows')
 def shows():
-    """Renders shows page."""
     # displays list of shows at /shows
     # DONE: replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
@@ -727,11 +611,6 @@ def shows():
 
 
 def create_show_form():
-    """Instantiates the show form based on request method and populates it with the artist and venues fields choices.
-
-    Returns
-        A new instance of ShowForm.
-    """
     form = ShowForm(request.form) if request.method == 'POST' else ShowForm()
 
     choose_option = (0, 'Select...')
@@ -747,7 +626,6 @@ def create_show_form():
 
 @app.route('/shows/create')
 def create_shows():
-    """Renders new show page."""
     # renders form. do not touch.
     form = create_show_form()
     return render_template('forms/new_show.html', form=form)
@@ -755,9 +633,7 @@ def create_shows():
 
 @app.route('/shows/create', methods=['POST'])
 def create_show_submission():
-    """Handles new show POST request and in case of success redirects to shows page."""
     # called to create new shows in the db, upon submitting new show listing form
-    # DONE: insert form data as a new Show record in the db, instead
     form = create_show_form()
 
     if not form.validate_on_submit():
@@ -803,7 +679,6 @@ def create_show_submission():
             logger.exception(error, exc_info=True)
             error_message = f'An error occurred while show creation. Sorry, this show could not be created.'
 
-    # DONE: on unsuccessful db insert, flash an error instead.
     # e.g., flash('An error occurred. Show could not be listed.')
     # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
     if error_message is not None:
@@ -814,27 +689,9 @@ def create_show_submission():
 
 @app.errorhandler(404)
 def not_found_error(error):
-    """Renders 404 HTTP error page."""
     return render_template('errors/404.html'), 404
 
 
-@app.errorhandler(500)
-def server_error(error):
-    """Renders 500 HTTP error page."""
-    db.session.rollback()
-    return render_template('errors/500.html'), 500
-
-
-if not app.debug:
-    file_handler = FileHandler('error.log')
-    file_handler.setFormatter(
-        Formatter(
-            '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
-    )
-    app.logger.setLevel(logging.INFO)
-    file_handler.setLevel(logging.INFO)
-    app.logger.addHandler(file_handler)
-    app.logger.info('errors')
 
 #----------------------------------------------------------------------------#
 # Launch.
